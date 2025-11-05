@@ -15,6 +15,7 @@ from typing import List, Dict, Optional
 import re
 from datetime import datetime, timedelta
 import json
+import time
 
 # Import AI classifier (optional)
 try:
@@ -26,32 +27,6 @@ except ImportError:
 
 class LinkedInStealthStartupFinder:
     """Find and track sports tech startups announced on LinkedIn"""
-
-    # Curated LinkedIn posts found via search
-    # These are real posts about sports tech startups coming out of stealth
-    # NOTE: Filter is set to last 12 months - add recent announcements
-    KNOWN_POSTS = [
-        {
-            "title": "Omnisent Sports - Out of stealth",
-            "url": "https://www.linkedin.com/posts/neilmetzler_were-out-of-stealth-omnisent-sports-activity-7370844160737656833-Ktkh",
-            "author": "Neil Metzler",
-            "company": "Omnisent Sports",
-            "description": "Sports tech startup providing real-time sentiment intelligence and sports analytics to help teams price sharper, engage fans deeper, and move faster.",
-            "date": "2025-03-15",
-            "category": "sports_tech"
-        },
-        # Add new startups here - entries older than 12 months will be filtered out
-        # To add a new startup, copy this template:
-        # {
-        #     "title": "Company Name - Brief description",
-        #     "url": "https://www.linkedin.com/posts/...",
-        #     "author": "Person Name",
-        #     "company": "Company Name",
-        #     "description": "Detailed description (include 'sports tech' keywords)",
-        #     "date": "YYYY-MM-DD",
-        #     "category": "sports_tech"
-        # },
-    ]
 
     # Search queries that work well for finding stealth sports tech startups
     SEARCH_QUERIES = [
@@ -71,45 +46,181 @@ class LinkedInStealthStartupFinder:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
 
+    def search_linkedin_posts(self, max_results_per_query: int = 5) -> List[Dict]:
+        """
+        Search LinkedIn for sports tech startup posts using Google
+
+        Args:
+            max_results_per_query: Number of results to get per search query
+
+        Returns:
+            List of found LinkedIn posts with metadata
+        """
+        all_posts = []
+        seen_urls = set()
+
+        print("Searching LinkedIn for sports tech startup announcements...")
+        print()
+
+        for query in self.SEARCH_QUERIES[:3]:  # Use first 3 queries
+            print(f"  Searching: {query[:60]}...")
+
+            try:
+                # Use Google search to find LinkedIn posts
+                search_url = f'https://www.google.com/search?q={requests.utils.quote(query)}&num={max_results_per_query}'
+                response = self.session.get(search_url, timeout=15)
+
+                if response.status_code != 200:
+                    print(f"    ⚠️  Search failed with status {response.status_code}")
+                    continue
+
+                soup = BeautifulSoup(response.text, 'lxml')
+
+                # Find all links in search results
+                links = soup.find_all('a', href=True)
+
+                found_count = 0
+                for link in links:
+                    href = link.get('href', '')
+
+                    # Extract actual URL from Google's format
+                    if '/url?q=' in href:
+                        actual_url = href.split('/url?q=')[1].split('&')[0]
+
+                        # Check if it's a LinkedIn post
+                        if ('linkedin.com/posts/' in actual_url or
+                            'linkedin.com/feed/update/' in actual_url):
+
+                            # Avoid duplicates
+                            if actual_url in seen_urls:
+                                continue
+                            seen_urls.add(actual_url)
+
+                            # Get title from link text
+                            title = link.get_text(strip=True)
+
+                            if title and len(title) > 10:
+                                all_posts.append({
+                                    'title': title,
+                                    'url': actual_url,
+                                    'source': 'LinkedIn',
+                                    'query': query,
+                                    'found_at': datetime.now().isoformat()
+                                })
+
+                                found_count += 1
+                                if found_count >= max_results_per_query:
+                                    break
+
+                print(f"    Found {found_count} posts")
+
+                # Rate limiting
+                time.sleep(2)
+
+            except Exception as e:
+                print(f"    ⚠️  Error: {e}")
+                continue
+
+        print()
+        print(f"Total LinkedIn posts found: {len(all_posts)}")
+        print()
+
+        return all_posts
+
+    def extract_startup_from_post(self, post: Dict) -> Optional[Dict]:
+        """
+        Extract startup information from a LinkedIn post
+
+        Args:
+            post: Post dictionary with title and URL
+
+        Returns:
+            Startup information if found
+        """
+        title = post.get('title', '')
+        url = post.get('url', '')
+
+        if not title or len(title) < 20:
+            return None
+
+        # Try to extract company name from title
+        # Pattern: Look for capitalized words that might be company names
+        patterns = [
+            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\s+(?:out of stealth|announced|raised)',
+            r'(?:excited to announce|thrilled to share)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})',
+            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}),?\s+a\s+(?:sports|tech)',
+        ]
+
+        company_name = None
+        for pattern in patterns:
+            match = re.search(pattern, title, re.IGNORECASE)
+            if match:
+                potential_name = match.group(1).strip()
+                # Filter out common false positives
+                if potential_name not in ['LinkedIn', 'The', 'We', 'I', 'This', 'Today']:
+                    company_name = potential_name
+                    break
+
+        if not company_name:
+            # Fallback: try to extract from URL or use generic name
+            if 'activity-' in url:
+                company_name = "Sports Tech Startup"
+            else:
+                return None
+
+        # Extract author from URL if possible
+        author = "Unknown"
+        if '/posts/' in url:
+            parts = url.split('/posts/')
+            if len(parts) > 1:
+                author_part = parts[1].split('_')[0]
+                if author_part:
+                    author = author_part.replace('-', ' ').title()
+
+        return {
+            'title': f"{company_name} - LinkedIn Announcement",
+            'url': url,
+            'author': author,
+            'company': company_name,
+            'description': f"Sports tech startup mentioned in LinkedIn post: {title[:150]}",
+            'date': datetime.now().strftime('%Y-%m-%d'),  # Today's date as approximation
+            'category': 'sports_tech',
+            'raw_title': title
+        }
+
     def get_known_startups(self, max_age_months: int = 12) -> List[Dict]:
         """
-        Return list of known sports tech startups found on LinkedIn
+        Search for and return sports tech startups from LinkedIn
 
         Args:
             max_age_months: Maximum age in months for startups (default: 12)
 
         Returns:
-            List of recent startup announcements
+            List of found startup announcements
         """
-        recent_startups = []
-        cutoff_date = datetime.now() - timedelta(days=max_age_months * 30)
+        # Perform live search
+        posts = self.search_linkedin_posts(max_results_per_query=5)
 
-        for startup in self.KNOWN_POSTS:
-            date_str = startup.get('date', '')
+        if not posts:
+            print("⚠️  No LinkedIn posts found from search.")
+            return []
 
-            try:
-                # Parse different date formats
-                if len(date_str) == 4:  # Year only (e.g., "2025")
-                    post_date = datetime(int(date_str), 1, 1)
-                elif len(date_str) == 10:  # Full date (e.g., "2025-03-15")
-                    post_date = datetime.strptime(date_str, '%Y-%m-%d')
-                else:
-                    # If can't parse, skip this startup
-                    print(f"  ⚠️  Skipping {startup['company']}: Invalid date format '{date_str}'")
-                    continue
+        # Extract startups from posts
+        startups = []
+        print("Extracting startup information from posts...")
+        print()
 
-                # Only include if within the time window
-                if post_date >= cutoff_date:
-                    recent_startups.append(startup)
-                else:
-                    days_old = (datetime.now() - post_date).days
-                    print(f"  ⏭️  Filtered out {startup['company']}: {days_old} days old (>{max_age_months} months)")
+        for i, post in enumerate(posts, 1):
+            print(f"  [{i}/{len(posts)}] Analyzing: {post['title'][:60]}...")
 
-            except Exception as e:
-                print(f"  ⚠️  Error parsing date for {startup['company']}: {e}")
-                continue
+            startup = self.extract_startup_from_post(post)
+            if startup:
+                startups.append(startup)
+                print(f"    ✓ Found: {startup['company']}")
+            else:
+                print(f"    ✗ Could not extract startup info")
 
-        return recent_startups
+        return startups
 
     def try_extract_public_content(self, url: str) -> Optional[Dict]:
         """
