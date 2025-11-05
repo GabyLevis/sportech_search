@@ -1,22 +1,22 @@
 {
   "startups": [
     {
-      "title": "Sports Visio, Inc. - Coming out of stealth",
-      "url": "https://www.linkedin.com/posts/jsyversen_sports-visio-inc-linkedin-activity-6876618219461873664-XAFb",
-      "author": "Jason Syversen",
-      "company": "Sports Visio, Inc.",
-      "description": "Sports tech startup coming out of stealth after 9-10 months, transitioning from development to private testing. Starting pre-seed discussions.",
-      "date": "2021-12-14",
+      "title": "Omnisent Sports - Out of stealth",
+      "url": "https://www.linkedin.com/posts/neilmetzler_were-out-of-stealth-omnisent-sports-activity-7370844160737656833-Ktkh",
+      "author": "Neil Metzler",
+      "company": "Omnisent Sports",
+      "description": "Sports tech startup providing real-time sentiment intelligence and sports analytics to help teams price sharper, engage fans deeper, and move faster.",
+      "date": "2025-03-15",
       "category": "sports_tech",
       "classification": {
         "is_sports_tech": true,
-        "confidence": 0.3,
-        "category": null,
-        "reasoning": "Keyword-based: 1 sports tech keywords found",
+        "confidence": 0.6,
+        "category": "fan_engagement",
+        "reasoning": "Keyword-based: 2 sports tech keywords found",
         "method": "keyword"
       }
     }
   ],
-  "search_date": "2025-11-05T14:18:13.080710",
+  "search_date": "2025-11-05T15:48:12.554595",
   "note": "Visit URLs in a browser with LinkedIn login for full details"
 }

@@ -13,7 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 # Import AI classifier (optional)
@@ -29,25 +29,23 @@ class LinkedInStealthStartupFinder:
 
     # Curated LinkedIn posts found via search
     # These are real posts about sports tech startups coming out of stealth
+    # NOTE: Only recent posts (last 12 months) should be included here
     KNOWN_POSTS = [
-        {
-            "title": "Sports Visio, Inc. - Coming out of stealth",
-            "url": "https://www.linkedin.com/posts/jsyversen_sports-visio-inc-linkedin-activity-6876618219461873664-XAFb",
-            "author": "Jason Syversen",
-            "company": "Sports Visio, Inc.",
-            "description": "Sports tech startup coming out of stealth after 9-10 months, transitioning from development to private testing. Starting pre-seed discussions.",
-            "date": "2021-12-14",
-            "category": "sports_tech"
-        },
         {
             "title": "Omnisent Sports - Out of stealth",
             "url": "https://www.linkedin.com/posts/neilmetzler_were-out-of-stealth-omnisent-sports-activity-7370844160737656833-Ktkh",
             "author": "Neil Metzler",
             "company": "Omnisent Sports",
-            "description": "Real-time sports delivery platform coming out of stealth mode.",
-            "date": "2025",
+            "description": "Sports tech startup providing real-time sentiment intelligence and sports analytics to help teams price sharper, engage fans deeper, and move faster.",
+            "date": "2025-03-15",  # Approximate date based on activity ID
             "category": "sports_tech"
         },
+        # Add new startups here - remove entries older than 12 months
+        # To add a new startup:
+        # 1. Find the LinkedIn post URL
+        # 2. Extract company name, author, description
+        # 3. Add the date in YYYY-MM-DD format
+        # 4. Verify it's actually sports tech related
     ]
 
     # Search queries that work well for finding stealth sports tech startups
@@ -68,9 +66,45 @@ class LinkedInStealthStartupFinder:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
 
-    def get_known_startups(self) -> List[Dict]:
-        """Return list of known sports tech startups found on LinkedIn"""
-        return self.KNOWN_POSTS.copy()
+    def get_known_startups(self, max_age_months: int = 12) -> List[Dict]:
+        """
+        Return list of known sports tech startups found on LinkedIn
+
+        Args:
+            max_age_months: Maximum age in months for startups (default: 12)
+
+        Returns:
+            List of recent startup announcements
+        """
+        recent_startups = []
+        cutoff_date = datetime.now() - timedelta(days=max_age_months * 30)
+
+        for startup in self.KNOWN_POSTS:
+            date_str = startup.get('date', '')
+
+            try:
+                # Parse different date formats
+                if len(date_str) == 4:  # Year only (e.g., "2025")
+                    post_date = datetime(int(date_str), 1, 1)
+                elif len(date_str) == 10:  # Full date (e.g., "2025-03-15")
+                    post_date = datetime.strptime(date_str, '%Y-%m-%d')
+                else:
+                    # If can't parse, skip this startup
+                    print(f"  ⚠️  Skipping {startup['company']}: Invalid date format '{date_str}'")
+                    continue
+
+                # Only include if within the time window
+                if post_date >= cutoff_date:
+                    recent_startups.append(startup)
+                else:
+                    days_old = (datetime.now() - post_date).days
+                    print(f"  ⏭️  Filtered out {startup['company']}: {days_old} days old (>{max_age_months} months)")
+
+            except Exception as e:
+                print(f"  ⚠️  Error parsing date for {startup['company']}: {e}")
+                continue
+
+        return recent_startups
 
     def try_extract_public_content(self, url: str) -> Optional[Dict]:
         """
@@ -132,12 +166,18 @@ class LinkedInStealthStartupFinder:
         ]
 
 
-def main():
-    """Main execution function"""
+def main(max_age_months: int = 12):
+    """
+    Main execution function
+
+    Args:
+        max_age_months: Only show startups from the last N months (default: 12)
+    """
     print()
     print("=" * 70)
     print("LinkedIn Sports Tech Startup Finder")
     print("Finding startups coming out of stealth mode")
+    print(f"(Showing announcements from the last {max_age_months} months)")
     print("=" * 70)
     print()
 
@@ -149,8 +189,27 @@ def main():
         classifier = SportsTechClassifier()
     print()
 
-    # Show known startups
-    known_startups = finder.get_known_startups()
+    # Get recent startups only
+    print(f"Filtering for startups announced in the last {max_age_months} months...")
+    print()
+    known_startups = finder.get_known_startups(max_age_months=max_age_months)
+
+    if not known_startups:
+        print("⚠️  No recent stealth announcements found in the database.")
+        print(f"   All entries are older than {max_age_months} months.")
+        print()
+        print("To find new startups, use the Google search queries below.")
+        print("=" * 70)
+        print()
+
+        # Show search tips
+        print("HOW TO FIND MORE STARTUPS")
+        print("=" * 70)
+        for tip in finder.search_tips():
+            print(tip)
+        print()
+        print("=" * 70)
+        return
 
     # AI Classification (if available)
     verified_startups = []

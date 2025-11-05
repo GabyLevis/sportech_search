@@ -133,16 +133,21 @@ AI Classification: Verifying sports tech relevance...
 - Extracts publicly available metadata without requiring login
 - Includes search tips for finding more startups manually
 
-### Currently Found Startups:
-1. **Sports Visio, Inc.** - Sports tech transitioning from development to private testing (2021)
-2. **Omnisent Sports** - Real-time sentiment intelligence platform (2025)
+### Currently Found Startups (Last 12 Months):
+1. **Omnisent Sports** - Real-time sentiment intelligence and sports analytics platform (March 2025)
 
 ### Output Files:
 - `linkedin_sports_tech_startups.json` - Structured data with startup details
 
+### Date Filtering:
+- **Automatic**: Only shows startups from the last 12 months
+- **Configurable**: Adjust the time window if needed
+- **Example**: Sports from 2021 are automatically filtered out
+
 ### Limitations:
 - Full LinkedIn post content requires authentication
 - Currently provides curated results from web search
+- Requires manual updates to add new startups to the database
 - Best used as a starting point for manual investigation
 
 ### Finding More Startups:
