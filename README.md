@@ -133,16 +133,21 @@ AI Classification: Verifying sports tech relevance...
 - Extracts publicly available metadata without requiring login
 - Includes search tips for finding more startups manually
 
-### Currently Found Startups (Last 12 Months):
-1. **Omnisent Sports** - Real-time sentiment intelligence and sports analytics platform (March 2025)
+### Currently Found Startups (Last 7 Days):
+**Database requires updates** - Add new startups as you find them!
+
+To add a new startup, edit `linkedin_finder.py` and add an entry to the `KNOWN_POSTS` list with today's date.
 
 ### Output Files:
 - `linkedin_sports_tech_startups.json` - Structured data with startup details
 
 ### Date Filtering:
-- **Automatic**: Only shows startups from the last 12 months
-- **Configurable**: Adjust the time window if needed
-- **Example**: Sports from 2021 are automatically filtered out
+- **Default**: Shows only startups from the **last 7 days** (1 week)
+- **Why 7 days**: Keeps results fresh and actionable for immediate opportunities
+- **Configurable**: Change `max_age_days` parameter if you want longer timeframe
+  - Example: `main(max_age_days=30)` for last month
+  - Example: `main(max_age_days=90)` for last quarter
+- **Example**: Startups older than 7 days are automatically filtered out
 
 ### Limitations:
 - Full LinkedIn post content requires authentication
