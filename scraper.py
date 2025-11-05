@@ -12,6 +12,13 @@ from datetime import datetime
 import json
 from abc import ABC, abstractmethod
 
+# Import AI classifier (optional)
+try:
+    from ai_classifier import SportsTechClassifier
+    AI_AVAILABLE = True
+except ImportError:
+    AI_AVAILABLE = False
+
 
 class BaseScraper(ABC):
     """Base class for publication scrapers"""
@@ -392,6 +399,12 @@ def main():
 
     extractor = StartupExtractor()
 
+    # Initialize AI classifier (optional)
+    classifier = None
+    if AI_AVAILABLE:
+        classifier = SportsTechClassifier()
+    print()
+
     print("Searching multiple sources for sports tech startup articles...")
     print()
 
@@ -435,17 +448,55 @@ def main():
 
         print()
 
+    # AI Classification (if available)
+    sports_tech_startups = []
+    if classifier and all_startups:
+        print("=" * 70)
+        print("AI Classification: Verifying sports tech relevance...")
+        print("=" * 70)
+        print()
+
+        for startup in all_startups:
+            classification = classifier.is_sports_tech(
+                company_name=startup.get('name', ''),
+                description=startup.get('context', ''),
+                article_title=startup.get('source_title', '')
+            )
+
+            startup['classification'] = classification
+
+            if classification['is_sports_tech']:
+                sports_tech_startups.append(startup)
+                print(f"✓ {startup['name']}: Sports Tech ({classification['confidence']:.0%} confidence)")
+                if classification.get('category'):
+                    print(f"  Category: {classification['category']}")
+            else:
+                print(f"✗ {startup['name']}: Not sports tech - {classification['reasoning']}")
+
+        print()
+        print(f"Filtered: {len(sports_tech_startups)}/{len(all_startups)} are sports tech")
+        print()
+    else:
+        # No AI classification, use all startups
+        sports_tech_startups = all_startups
+
     # Display results
     print("=" * 70)
-    print(f"RESULTS: Found {len(all_startups)} startups from {len(all_articles)} articles")
+    print(f"RESULTS: Found {len(sports_tech_startups)} sports tech startups from {len(all_articles)} articles")
     print("=" * 70)
     print()
 
-    if all_startups:
-        for i, startup in enumerate(all_startups, 1):
+    if sports_tech_startups:
+        for i, startup in enumerate(sports_tech_startups, 1):
             summary = extractor.generate_summary(startup)
 
             print(f"{i}. {startup['name']}")
+
+            # Show classification info if available
+            if startup.get('classification'):
+                cls = startup['classification']
+                print(f"   Classification: {cls['confidence']:.0%} confidence - {cls.get('category', 'N/A')}")
+
             print(f"   Source: {startup.get('source', 'N/A')} - {startup.get('source_title', 'N/A')[:60]}")
             print(f"   Summary: {summary[:200]}...")
             print(f"   URL: {startup['source_url']}")
@@ -462,10 +513,12 @@ def main():
     # Save results to JSON
     output_file = 'startups_found.json'
     with open(output_file, 'w') as f:
-        json.dump(all_startups, f, indent=2)
+        json.dump(sports_tech_startups, f, indent=2)
 
     print()
     print(f"Full results saved to {output_file}")
+    if classifier:
+        print(f"(AI-filtered: {len(sports_tech_startups)}/{len(all_startups)} verified as sports tech)")
 
 
 if __name__ == "__main__":

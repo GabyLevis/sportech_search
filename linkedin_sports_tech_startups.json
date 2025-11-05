@@ -7,18 +7,16 @@
       "company": "Sports Visio, Inc.",
       "description": "Sports tech startup coming out of stealth after 9-10 months, transitioning from development to private testing. Starting pre-seed discussions.",
       "date": "2021-12-14",
-      "category": "sports_tech"
-    },
-    {
-      "title": "Omnisent Sports - Out of stealth",
-      "url": "https://www.linkedin.com/posts/neilmetzler_were-out-of-stealth-omnisent-sports-activity-7370844160737656833-Ktkh",
-      "author": "Neil Metzler",
-      "company": "Omnisent Sports",
-      "description": "Real-time sports delivery platform coming out of stealth mode.",
-      "date": "2025",
-      "category": "sports_tech"
+      "category": "sports_tech",
+      "classification": {
+        "is_sports_tech": true,
+        "confidence": 0.3,
+        "category": null,
+        "reasoning": "Keyword-based: 1 sports tech keywords found",
+        "method": "keyword"
+      }
     }
   ],
-  "search_date": "2025-11-05T13:26:21.974943",
+  "search_date": "2025-11-05T14:18:13.080710",
   "note": "Visit URLs in a browser with LinkedIn login for full details"
 }

@@ -29,6 +29,7 @@ wheels/
 
 # Output files
 startups_found.json
+linkedin_sports_tech_startups.json
 *.log
 
 # IDE

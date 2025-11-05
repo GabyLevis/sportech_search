@@ -16,6 +16,13 @@ import re
 from datetime import datetime
 import json
 
+# Import AI classifier (optional)
+try:
+    from ai_classifier import SportsTechClassifier
+    AI_AVAILABLE = True
+except ImportError:
+    AI_AVAILABLE = False
+
 
 class LinkedInStealthStartupFinder:
     """Find and track sports tech startups announced on LinkedIn"""
@@ -136,17 +143,60 @@ def main():
 
     finder = LinkedInStealthStartupFinder()
 
+    # Initialize AI classifier (optional)
+    classifier = None
+    if AI_AVAILABLE:
+        classifier = SportsTechClassifier()
+    print()
+
     # Show known startups
     known_startups = finder.get_known_startups()
 
-    print(f"FOUND: {len(known_startups)} Sports Tech Startups Coming Out of Stealth")
+    # AI Classification (if available)
+    verified_startups = []
+    if classifier:
+        print("AI Classification: Verifying sports tech relevance...")
+        print("=" * 70)
+        print()
+
+        for startup in known_startups:
+            classification = classifier.is_sports_tech(
+                company_name=startup['company'],
+                description=startup['description'],
+                article_title=startup['title']
+            )
+
+            startup['classification'] = classification
+
+            if classification['is_sports_tech']:
+                verified_startups.append(startup)
+                print(f"✓ {startup['company']}: Verified sports tech ({classification['confidence']:.0%})")
+                if classification.get('category'):
+                    print(f"  Category: {classification['category']}")
+            else:
+                print(f"✗ {startup['company']}: {classification['reasoning']}")
+
+        print()
+        print(f"AI Verification: {len(verified_startups)}/{len(known_startups)} confirmed as sports tech")
+        print()
+    else:
+        # No AI classification available
+        verified_startups = known_startups
+
+    print(f"FOUND: {len(verified_startups)} Sports Tech Startups Coming Out of Stealth")
     print("=" * 70)
     print()
 
-    for i, startup in enumerate(known_startups, 1):
+    for i, startup in enumerate(verified_startups, 1):
         print(f"{i}. {startup['company']}")
         print("-" * 70)
         print(finder.format_startup_info(startup))
+
+        # Show classification if available
+        if startup.get('classification'):
+            cls = startup['classification']
+            print(f"AI Confidence: {cls['confidence']:.0%} - Category: {cls.get('category', 'N/A')}")
+
         print()
 
         # Try to get additional public info
@@ -166,7 +216,7 @@ def main():
 
     # Save results
     output = {
-        "startups": known_startups,
+        "startups": verified_startups,
         "search_date": datetime.now().isoformat(),
         "note": "Visit URLs in a browser with LinkedIn login for full details"
     }
@@ -177,6 +227,8 @@ def main():
 
     print("=" * 70)
     print(f"Results saved to: {output_file}")
+    if classifier:
+        print(f"(AI-verified: {len(verified_startups)}/{len(known_startups)} confirmed as sports tech)")
     print("=" * 70)
     print()
 
