@@ -1,6 +1,6 @@
-# Sports Tech Startup Scraper
+# Sports Tech Startup Finder
 
-A platform that searches sports industry magazines for articles about new sports tech startups and provides summaries.
+A platform that finds and tracks sports tech startups from multiple sources including publications and LinkedIn announcements.
 
 ## Features
 
@@ -17,9 +17,16 @@ A platform that searches sports industry magazines for articles about new sports
 pip install -r requirements.txt
 ```
 
-2. Run the scraper:
+2. Run the scrapers:
+
+**Publication Scraper** (TechCrunch, Sportico):
 ```bash
 python scraper.py
+```
+
+**LinkedIn Stealth Startup Finder** (Sports tech coming out of stealth):
+```bash
+python linkedin_finder.py
 ```
 
 ## Supported Publications
@@ -64,6 +71,34 @@ The scraper returns a list of startups with:
 - Add search functionality to target specific sports/technologies
 - Create a web interface for easier interaction
 - Add scheduled scraping with email notifications
+
+## LinkedIn Stealth Startup Finder
+
+**Special feature**: Find sports tech startups coming out of stealth mode on LinkedIn.
+
+### What It Does:
+- Tracks sports tech startups announcing their exit from stealth mode
+- Provides curated list of found startups with LinkedIn post URLs
+- Extracts publicly available metadata without requiring login
+- Includes search tips for finding more startups manually
+
+### Currently Found Startups:
+1. **Sports Visio, Inc.** - Sports tech transitioning from development to private testing (2021)
+2. **Omnisent Sports** - Real-time sentiment intelligence platform (2025)
+
+### Output Files:
+- `linkedin_sports_tech_startups.json` - Structured data with startup details
+
+### Limitations:
+- Full LinkedIn post content requires authentication
+- Currently provides curated results from web search
+- Best used as a starting point for manual investigation
+
+### Finding More Startups:
+The tool provides Google search queries you can use:
+- `site:linkedin.com/posts "out of stealth" sports tech`
+- `site:linkedin.com/posts sports tech startup "seed funding"`
+- And more...
 
 ## Adding New Sources
 
